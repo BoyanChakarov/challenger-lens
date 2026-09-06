@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Challenger Lens">
+  <rect width="64" height="64" rx="16" fill="#07120f"/>
+  <path d="M15 39 32 12l17 27-17 13L15 39Z" fill="#c8a96a"/>
+  <path d="m24 37 8-13 8 13-8 6-8-6Z" fill="#0f2c27"/>
+</svg>
