@@ -105,6 +105,7 @@ export function FilterBar({ filters, patches, onChange }: FilterBarProps) {
           value={filters.minGames}
           onChange={(event) => update("minGames", Number(event.target.value))}
         >
+          <option value={5}>5 games</option>
           <option value={10}>10 games</option>
           <option value={25}>25 games</option>
           <option value={50}>50 games</option>

@@ -62,7 +62,7 @@ function App() {
     patch: demoPatches[0] ?? "",
     region: "ALL",
     role: "ALL",
-    minGames: 25,
+    minGames: 5,
     query: "",
   });
 

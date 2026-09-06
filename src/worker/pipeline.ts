@@ -229,7 +229,10 @@ export async function runIngestion(
 
     for (const result of regionResults) {
       try {
-        await repository.refreshAnalytics(result.publicPatch, result.region, 5);
+        // Retain sparse observed builds and matchups in the public aggregate
+        // layer; the dashboard applies its own minimum-sample filter and the
+        // evidence model labels small samples as insufficient.
+        await repository.refreshAnalytics(result.publicPatch, result.region, 1);
       } catch (error) {
         recordError(`analytics:${result.region}`, error);
       }
