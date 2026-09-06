@@ -21,10 +21,12 @@ export const challengerEntrySchema = z
   });
 
 export const challengerLeagueSchema = z.object({
-  leagueId: nonEmptyString,
+  // Riot removed these legacy fields from League-v4's apex league
+  // response in 2026. Keep accepting them for older fixtures/caches.
+  leagueId: nonEmptyString.optional(),
   queue: z.literal("RANKED_SOLO_5x5"),
   tier: z.literal("CHALLENGER"),
-  name: z.string(),
+  name: z.string().optional(),
   entries: z.array(challengerEntrySchema),
 });
 
@@ -127,7 +129,8 @@ const timelineEventSchema = z
   .object({
     type: nonEmptyString,
     timestamp: nonNegativeInteger,
-    participantId: z.number().int().min(1).max(10).optional(),
+    // Timeline system events can use participantId 0; player events use 1-10.
+    participantId: z.number().int().min(0).max(10).optional(),
     itemId: nonNegativeInteger.optional(),
     beforeId: nonNegativeInteger.optional(),
     afterId: nonNegativeInteger.optional(),

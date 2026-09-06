@@ -3,6 +3,78 @@ import { describe, expect, it, vi } from "vitest";
 import { RiotClient, riotClientInternals } from "../src/worker/riot-client";
 
 describe("Riot client", () => {
+  it("accepts the current apex-league response without legacy identity fields", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          tier: "CHALLENGER",
+          queue: "RANKED_SOLO_5x5",
+          entries: [
+            {
+              puuid: "challenger-player-puuid",
+              leaguePoints: 1_234,
+              rank: "I",
+              wins: 100,
+              losses: 80,
+              veteran: true,
+              inactive: false,
+              freshBlood: false,
+              hotStreak: true,
+            },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+    const client = new RiotClient({
+      apiKey: "RGAPI-a-valid-placeholder-key",
+      concurrency: 1,
+      maxAttempts: 1,
+      fetchImplementation: fetchMock,
+    });
+
+    await expect(client.getChallengerLeague("EUW1")).resolves.toMatchObject({
+      tier: "CHALLENGER",
+      queue: "RANKED_SOLO_5x5",
+      entries: [{ puuid: "challenger-player-puuid" }],
+    });
+  });
+
+  it("accepts timeline system events with participant ID zero", async () => {
+    const participantIds = Array.from({ length: 10 }, (_, index) => `puuid-${index + 1}`);
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          metadata: {
+            matchId: "EUW1_123",
+            participants: participantIds,
+          },
+          info: {
+            frameInterval: 60_000,
+            frames: [
+              {
+                timestamp: 0,
+                participantFrames: {},
+                events: [{ type: "PAUSE_END", timestamp: 0, participantId: 0 }],
+              },
+            ],
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+    const client = new RiotClient({
+      apiKey: "RGAPI-a-valid-placeholder-key",
+      concurrency: 1,
+      maxAttempts: 1,
+      fetchImplementation: fetchMock,
+    });
+
+    await expect(client.getTimeline("EUW1_123")).resolves.toMatchObject({
+      info: { frames: [{ events: [{ participantId: 0 }] }] },
+    });
+  });
+
   it("parses both numeric and date Retry-After headers", () => {
     expect(riotClientInternals.parseRetryAfter("2")).toBe(2_000);
     expect(

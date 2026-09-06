@@ -286,7 +286,12 @@ function buildFrameRows(matchId: string, timeline: RiotTimeline): ParticipantFra
 function buildItemEventRows(matchId: string, timeline: RiotTimeline): ItemEventRow[] {
   const events = timeline.info.frames
     .flatMap((frame, frameIndex) => frame.events.map((event, eventIndex) => ({ event, frameIndex, eventIndex })))
-    .filter(({ event }) => itemEventTypes.has(event.type) && event.participantId !== undefined)
+    .filter(
+      ({ event }) =>
+        itemEventTypes.has(event.type) &&
+        event.participantId !== undefined &&
+        event.participantId >= 1,
+    )
     .sort(
       (left, right) =>
         left.event.timestamp - right.event.timestamp ||
