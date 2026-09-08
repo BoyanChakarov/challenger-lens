@@ -146,13 +146,11 @@ export function normalizePatch(version: string): string {
 }
 
 /**
- * Riot's game/realm version still uses the client major (for example 16.17.1),
- * while patch notes use the calendar-season label (26.17 in 2026). Eligibility
- * always compares game versions; this label is only for public analytics.
+ * Keep the canonical gameplay patch from Riot's game/realm version. Data
+ * Dragon's full asset version remains a separate field on the stored match.
  */
-export function marketingPatch(version: string, at = new Date()): string {
-  const [, minor] = normalizePatch(version).split(".");
-  return `${String(at.getUTCFullYear()).slice(-2)}.${minor}`;
+export function marketingPatch(version: string, _at = new Date()): string {
+  return normalizePatch(version);
 }
 
 export function normalizeGameDurationSeconds(duration: number): number {
@@ -213,13 +211,6 @@ function finalItems(participant: RiotParticipant): number[] {
   ]
     .filter((itemId) => itemId > 0)
     .sort((left, right) => left - right);
-}
-
-function frameForParticipant(
-  frame: ReturnType<typeof findFrameAtFifteen>,
-  participantId: number,
-): RiotParticipantFrame | undefined {
-  return frame?.participantFrames[String(participantId)];
 }
 
 function buildParticipantRows(match: RiotMatch): MatchParticipantRow[] {
@@ -312,8 +303,7 @@ function buildItemEventRows(matchId: string, timeline: RiotTimeline): ItemEventR
   }));
 }
 
-function buildRolePairRows(match: RiotMatch, timeline: RiotTimeline): RolePairRow[] {
-  const frame = findFrameAtFifteen(timeline);
+function buildRolePairRows(match: RiotMatch): RolePairRow[] {
   const pairs: RolePairRow[] = [];
 
   for (const role of VALID_TEAM_POSITIONS) {
@@ -327,13 +317,6 @@ function buildRolePairRows(match: RiotMatch, timeline: RiotTimeline): RolePairRo
     // Do not manufacture lane opponents when Riot did not report one unambiguous
     // teamPosition on each team. The analytics layer only consumes valid pairs.
     if (blue.length !== 1 || red.length !== 1) continue;
-    if (frame) {
-      const hasBothFrames =
-        frameForParticipant(frame, blue[0]!.participantId) &&
-        frameForParticipant(frame, red[0]!.participantId);
-      if (!hasBothFrames) continue;
-    }
-
     pairs.push({
       match_id: match.metadata.matchId,
       role,
@@ -416,6 +399,6 @@ export function transformEligibleMatch(
     participants,
     frames: buildFrameRows(match.metadata.matchId, timeline),
     itemEvents: buildItemEventRows(match.metadata.matchId, timeline),
-    rolePairs: buildRolePairRows(match, timeline),
+    rolePairs: buildRolePairRows(match),
   };
 }

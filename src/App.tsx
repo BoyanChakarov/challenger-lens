@@ -18,6 +18,7 @@ import { FilterBar } from "./components/FilterBar";
 import { ItemBuilds } from "./components/ItemBuilds";
 import { MatchupCard } from "./components/MatchupCard";
 import { StatCard } from "./components/StatCard";
+import { CompanionApp } from "./companion/CompanionApp";
 import { demoData, demoPatches } from "./data/demo";
 import {
   formatCompactNumber,
@@ -28,7 +29,6 @@ import {
   getMatchupInsights,
   summarizeDataset,
 } from "./lib/analytics";
-import { loadDashboardData } from "./lib/dashboard-data";
 import type { DashboardFilters, DashboardLoadResult } from "./types";
 
 const initialResult: DashboardLoadResult = {
@@ -36,6 +36,11 @@ const initialResult: DashboardLoadResult = {
   mode: "demo",
   message: "Preparing the latest available dataset…",
 };
+
+async function loadDashboardData() {
+  const dashboardData = await import("./lib/dashboard-data");
+  return dashboardData.loadDashboardData();
+}
 
 function sortPatches(patches: string[]): string[] {
   return Array.from(new Set(patches)).sort((left, right) =>
@@ -55,7 +60,11 @@ function formatUpdatedAt(value?: string): string {
   }).format(date);
 }
 
-function App() {
+interface AnalyticsDashboardProps {
+  onOpenCompanion: () => void;
+}
+
+export function AnalyticsDashboard({ onOpenCompanion }: AnalyticsDashboardProps) {
   const [result, setResult] = useState<DashboardLoadResult>(initialResult);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<DashboardFilters>({
@@ -166,6 +175,9 @@ function App() {
           <a href="#methodology">Methodology</a>
         </nav>
         <div className="header-actions">
+          <button className="surface-switch" type="button" onClick={onOpenCompanion}>
+            Live companion
+          </button>
           <div className={`source-chip source-chip--${viewMode}`}>
             <span className="source-chip__pulse" />
             {viewLabel}
@@ -358,6 +370,23 @@ function App() {
       </footer>
     </div>
   );
+}
+
+type AppSurface = "companion" | "research";
+
+function requestedSurface(): AppSurface {
+  const value = new URLSearchParams(window.location.search).get("view");
+  return value === "research" ? "research" : "companion";
+}
+
+function App() {
+  const [surface, setSurface] = useState<AppSurface>(requestedSurface);
+
+  if (surface === "research") {
+    return <AnalyticsDashboard onOpenCompanion={() => setSurface("companion")} />;
+  }
+
+  return <CompanionApp onOpenResearch={() => setSurface("research")} />;
 }
 
 export default App;

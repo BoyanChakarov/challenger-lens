@@ -57,7 +57,27 @@ function parseRetryAfter(value: string | null, now = Date.now()): number | undef
 }
 
 function safeEndpoint(url: URL): string {
-  return `${url.origin}${url.pathname}`;
+  const segments = url.pathname.split("/");
+  const summonerIndex = segments.indexOf("summoners");
+  if (summonerIndex >= 0 && segments[summonerIndex + 1]) {
+    segments[summonerIndex + 1] = "[redacted-player-id]";
+  }
+
+  const puuidIndex = segments.indexOf("by-puuid");
+  if (puuidIndex >= 0 && segments[puuidIndex + 1]) {
+    segments[puuidIndex + 1] = "[redacted-player-id]";
+  }
+
+  const matchIndex = segments.indexOf("matches");
+  if (
+    matchIndex >= 0 &&
+    segments[matchIndex + 1] &&
+    segments[matchIndex + 1] !== "by-puuid"
+  ) {
+    segments[matchIndex + 1] = "[redacted-match-id]";
+  }
+
+  return `${url.origin}${segments.join("/")}`;
 }
 
 export class RiotClient {
@@ -233,4 +253,4 @@ export class RiotClient {
   }
 }
 
-export const riotClientInternals = { parseRetryAfter };
+export const riotClientInternals = { parseRetryAfter, safeEndpoint };

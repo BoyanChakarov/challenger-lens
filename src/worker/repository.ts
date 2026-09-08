@@ -73,6 +73,27 @@ export type MatchExclusionRow = Readonly<{
   last_seen_at: string;
 }>;
 
+type StoredMatchExclusion = Readonly<{
+  match_id: string;
+  filter_reason: MatchFilterReason;
+  evaluated_against_patch: string;
+}>;
+
+/**
+ * Permanent eligibility failures can always be reused. A patch mismatch is
+ * only reusable for the exact patch it was evaluated against, because Data
+ * Dragon can temporarily lag a newly deployed gameplay patch.
+ */
+export function matchExclusionApplies(
+  exclusion: Pick<StoredMatchExclusion, "filter_reason" | "evaluated_against_patch">,
+  evaluatedPatch: string,
+): boolean {
+  return (
+    exclusion.filter_reason !== "old_patch" ||
+    exclusion.evaluated_against_patch === evaluatedPatch
+  );
+}
+
 export class DatabaseOperationError extends Error {
   constructor(
     readonly operation: string,
@@ -294,15 +315,22 @@ export class IngestionRepository {
     return completed;
   }
 
-  async getExcludedMatchIds(matchIds: readonly string[]): Promise<Set<string>> {
+  async getExcludedMatchIds(
+    matchIds: readonly string[],
+    evaluatedPatch: string,
+  ): Promise<Set<string>> {
     const excluded = new Set<string>();
     for (const batch of chunk(matchIds, this.batchSize)) {
       const { data, error } = await this.client
         .from("match_exclusions")
-        .select("match_id")
+        .select("match_id,filter_reason,evaluated_against_patch")
         .in("match_id", batch);
       throwOnError("find excluded matches", error);
-      for (const row of data ?? []) excluded.add(String(row.match_id));
+      for (const row of (data ?? []) as StoredMatchExclusion[]) {
+        if (matchExclusionApplies(row, evaluatedPatch)) {
+          excluded.add(String(row.match_id));
+        }
+      }
     }
     return excluded;
   }
@@ -370,6 +398,19 @@ export class IngestionRepository {
       p_min_games: minimumGames,
     });
     throwOnError("refresh public analytics", error);
+  }
+
+  async refreshCompanionAnalytics(
+    patch: string,
+    region: RiotRegion | null,
+    minimumGames = 1,
+  ): Promise<void> {
+    const { error } = await this.client.rpc("refresh_companion_analytics", {
+      p_patch: patch,
+      p_region: region,
+      p_min_games: minimumGames,
+    });
+    throwOnError("refresh companion analytics", error);
   }
 
   private async upsertRows<T extends object>(

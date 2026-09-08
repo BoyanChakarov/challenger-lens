@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability for the companion and its read-only overlay.",
+  "windows": ["main", "overlay"],
+  "permissions": ["core:default"]
+}
+

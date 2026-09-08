@@ -106,10 +106,10 @@ const timeline = timelineSchema.parse({
 });
 
 describe("Riot transforms", () => {
-  it("keeps client and public patch labels separate", () => {
+  it("derives the canonical gameplay patch without using the calendar year", () => {
     expect(normalizePatch("16.17.123.456")).toBe("16.17");
     expect(marketingPatch("16.17.1", new Date("2026-09-05T00:00:00Z"))).toBe(
-      "26.17",
+      "16.17",
     );
   });
 
@@ -127,17 +127,39 @@ describe("Riot transforms", () => {
     const result = transformEligibleMatch(match, timeline, {
       runId: "3f06ad35-03e7-4505-b0aa-8b6077897c11",
       ingestedAt: new Date("2026-09-05T00:00:00Z"),
-      marketingPatch: "26.17",
+      marketingPatch: "16.17",
       ddragonVersion: "16.17.1",
     });
 
-    expect(result.match.patch).toBe("26.17");
+    expect(result.match.patch).toBe("16.17");
     expect(result.match.game_version).toBe("16.17.123.456");
     expect(result.participants).toHaveLength(10);
     expect(result.frames).toHaveLength(10);
     expect(result.rolePairs.map((pair) => pair.role)).toEqual(roles);
     expect(result.itemEvents).toHaveLength(1);
     expect(result.itemEvents[0]?.item_id).toBe(3001);
+  });
+
+  it("keeps canonical role pairs when a 15-minute participant frame is missing", () => {
+    const participantFrames = { ...timeline.info.frames[0]!.participantFrames };
+    delete participantFrames["6"];
+    const incompleteTimeline = timelineSchema.parse({
+      ...timeline,
+      info: {
+        ...timeline.info,
+        frames: [{ ...timeline.info.frames[0]!, participantFrames }],
+      },
+    });
+
+    const result = transformEligibleMatch(match, incompleteTimeline, {
+      runId: "3f06ad35-03e7-4505-b0aa-8b6077897c11",
+      ingestedAt: new Date("2026-09-05T00:00:00Z"),
+      marketingPatch: "16.17",
+      ddragonVersion: "16.17.1",
+    });
+
+    expect(result.frames).toHaveLength(9);
+    expect(result.rolePairs.map((pair) => pair.role)).toEqual(roles);
   });
 
   it("rejects a timeline for another match", () => {
