@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Challenger Lens Companion",
+  "version": "0.2.0",
+  "identifier": "com.challengerlens.companion",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Challenger Lens Companion",
+        "width": 1180,
+        "height": 760,
+        "minWidth": 900,
+        "minHeight": 620,
+        "center": true,
+        "resizable": true
+      },
+      {
+        "label": "overlay",
+        "title": "Challenger Lens Overlay",
+        "url": "index.html?window=overlay",
+        "width": 430,
+        "height": 720,
+        "minWidth": 360,
+        "minHeight": 480,
+        "x": 24,
+        "y": 120,
+        "alwaysOnTop": true,
+        "decorations": false,
+        "resizable": true,
+        "skipTaskbar": true,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://*.supabase.co https://ddragon.leagueoflegends.com; img-src 'self' asset: http://asset.localhost data: https://ddragon.leagueoflegends.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "shortDescription": "Evidence-backed League champion-select companion",
+    "longDescription": "A read-only Windows companion that carries pre-game recommendations into a static, non-injected overlay.",
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": true
+      }
+    }
+  }
+}

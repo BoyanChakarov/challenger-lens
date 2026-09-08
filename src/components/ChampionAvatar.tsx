@@ -1,9 +1,12 @@
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 interface ChampionAvatarProps {
   name: string;
   size?: "small" | "medium" | "large";
   muted?: boolean;
+  championId?: number;
+  dataDragonVersion?: string;
+  assetKey?: string;
 }
 function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
@@ -19,8 +22,18 @@ export function ChampionAvatar({
   name,
   size = "medium",
   muted = false,
+  championId,
+  dataDragonVersion,
+  assetKey,
 }: ChampionAvatarProps) {
+  const [imageFailed, setImageFailed] = useState(false);
   const hue = hueFor(name);
+  const imageUrl = dataDragonVersion && assetKey
+    ? `https://ddragon.leagueoflegends.com/cdn/${dataDragonVersion}/img/champion/${assetKey}.png`
+    : undefined;
+
+  useEffect(() => setImageFailed(false), [imageUrl]);
+
   const style: CSSProperties = {
     background: muted
       ? `linear-gradient(145deg, hsl(${hue} 18% 25%), hsl(${hue} 14% 14%))`
@@ -31,9 +44,12 @@ export function ChampionAvatar({
     <span
       className={`champion-avatar champion-avatar--${size}`}
       style={style}
-      aria-hidden="true"
+      aria-label={championId ? `${name} champion portrait` : undefined}
+      aria-hidden={championId ? undefined : "true"}
     >
-      {initials(name).toUpperCase()}
+      {imageUrl && !imageFailed ? (
+        <img src={imageUrl} alt="" onError={() => setImageFailed(true)} />
+      ) : initials(name).toUpperCase()}
     </span>
   );
 }
