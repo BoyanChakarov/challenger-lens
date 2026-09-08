@@ -363,9 +363,12 @@ select is(
   '98.98',
   'RPC preserves the exact requested gameplay patch'
 );
-select unlike(
-  (select payload::text from companion_test_results where kind = 'selected'),
-  '%companion-fixture-puuid%',
+select ok(
+  (
+    select payload::text not like '%companion-fixture-puuid%'
+    from companion_test_results
+    where kind = 'selected'
+  ),
   'RPC never exposes player identifiers'
 );
 
