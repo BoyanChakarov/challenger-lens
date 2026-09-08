@@ -8,6 +8,13 @@ Challenger Lens is a portfolio project that combines an idempotent Riot API data
 
 The app says “appears favored” rather than “is a counter.” It exposes sample size, uncertainty, player concentration, and conflicting lane signals so a small raw win rate cannot masquerade as a prediction.
 
+The repository now also contains **Challenger Lens Companion**, a read-only
+Windows app. Its Tauri connector detects League lifecycle and visible champion
+select state through local Riot interfaces, requests exact-patch aggregate
+options from Supabase, then carries the prepared plan into a separate static
+always-on-top overlay. It never picks, bans, locks, changes loadouts, injects
+into League, reads process memory, or sends League's local credential off-device.
+
 ## What it includes
 
 - EUW1 and EUN1 Challenger Solo/Duo ladder snapshots
@@ -19,6 +26,12 @@ The app says “appears favored” rather than “is a counter.” It exposes sa
 - Shrunk win-rate estimates, Wilson intervals, baseline lift, and evidence labels
 - Region, role, patch, champion, and minimum-sample filters
 - A responsive React dashboard with live Supabase data and demo fallback
+- A seven-state Windows companion with privacy-reduced champion-select data
+- A non-injected match overlay with a manual/local-inventory item checklist
+- Aggregate-only rune, spell, item-path, and bounded recommendation contracts
+- An attributed OP.GG MCP fallback for personal testing when the stricter Riot-derived aggregate is unavailable
+- An opt-in player profile with exact local League mastery, ranked champion
+  records, recent matchups, and a tightly capped personal ban modifier
 - Locked ingestion tables, public read-only aggregate tables, RLS tests, CI, and a resumable worker
 
 ## Architecture
@@ -31,9 +44,20 @@ flowchart LR
   D --> E["Analytics refresh RPC"]
   E --> F["Read-only aggregate tables"]
   F --> G["React + Vite dashboard"]
+  F --> H["Exact-patch recommendation RPC"]
+  I["Local League APIs"] --> J["Read-only Tauri connector"]
+  H --> K["Champion-select companion"]
+  J --> K
+  K --> L["Static match overlay"]
 ```
 
-A full Challenger timeline crawl can take far longer than a serverless request, so ingestion runs as a bounded, resumable Node process. Supabase is the backend and public API; the browser never receives the Riot or Supabase secret key. See [the architecture notes](docs/ARCHITECTURE.md) for the trade-offs.
+A full Challenger timeline crawl can take far longer than a serverless request, so ingestion runs as a bounded, resumable Node process. Supabase is the primary backend and public API; the browser never receives the Riot or Supabase secret key. The Windows connector may use OP.GG's official public MCP endpoint as a locally cached, explicitly attributed fallback. See [the architecture notes](docs/ARCHITECTURE.md) for the trade-offs.
+
+The companion's endpoint inventory, privacy boundary, cache behavior, and
+overlay rules are documented in
+[Live Companion Architecture](docs/LIVE_COMPANION_ARCHITECTURE.md). Keep the
+[Riot product registration draft](docs/RIOT_PRODUCT_REGISTRATION.md) aligned
+with every endpoint before distributing a build.
 
 ## Run the dashboard
 
@@ -53,6 +77,26 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
 ```
 
 Without valid Supabase values—or before live ingestion—the UI uses a clearly labeled synthetic dataset. Synthetic rows are never presented as Riot observations.
+
+## Run the Windows companion
+
+Requirements: the dashboard requirements above, Rust stable with the MSVC
+target, Microsoft C++ Build Tools, and WebView2.
+
+```bash
+pnpm desktop:dev
+```
+
+Create signed/distributable Windows bundle inputs with:
+
+```bash
+pnpm desktop:build
+```
+
+The normal browser development URL opens a clearly labeled synthetic companion
+preview because local League APIs are available only to the native app. A real
+build uses local GET-only LCU and Live Client calls and automatically rediscovers
+League's rotating lockfile credential after a restart.
 
 ## Set up Supabase
 
@@ -112,6 +156,8 @@ Completed-item win rates are descriptive, not recommendations: winning players h
 | Command | Purpose |
 | --- | --- |
 | `pnpm dev` | Start the dashboard locally |
+| `pnpm desktop:dev` | Start the native Windows companion |
+| `pnpm desktop:build` | Build the Windows companion installers |
 | `pnpm build` | Type-check and create a production build |
 | `pnpm test` | Run deterministic analytics and transform tests |
 | `pnpm typecheck` | Check browser and worker TypeScript |
