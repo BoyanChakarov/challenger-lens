@@ -27,7 +27,7 @@ jobs:
       RIOT_MIN_REQUEST_INTERVAL_MS: "1200"
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11.19.0
           run_install: false
