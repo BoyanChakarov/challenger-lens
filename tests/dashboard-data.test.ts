@@ -10,7 +10,7 @@ import {
 describe("Supabase aggregate normalization", () => {
   it("maps the exact dataset_status schema and preserves synthetic provenance", () => {
     const row = normalizeDatasetStatus({
-      patch: "26.17",
+      patch: "16.17",
       region: "EUNE",
       tracked_player_count: 183,
       match_count: 910,
@@ -29,7 +29,7 @@ describe("Supabase aggregate normalization", () => {
 
   it("maps current champion metric column names", () => {
     const row = normalizeChampionStat({
-      patch: "26.17",
+      patch: "16.17",
       region: "EUW",
       role: "MIDDLE",
       champion_id: 38,
@@ -49,7 +49,7 @@ describe("Supabase aggregate normalization", () => {
 
   it("maps canonical opponent and baseline fields", () => {
     const row = normalizeMatchupStat({
-      patch: "26.17",
+      patch: "16.17",
       region: "EUW",
       role: "MIDDLE",
       champion_id: 38,
@@ -73,7 +73,7 @@ describe("Supabase aggregate normalization", () => {
 
   it("falls back to readable item IDs when names are not enriched", () => {
     const row = normalizeItemBuildStat({
-      patch: "26.17",
+      patch: "16.17",
       region: "EUW",
       role: "MIDDLE",
       champion_id: 38,

@@ -8,12 +8,12 @@ import type {
   Role,
 } from "../types";
 
-const CURRENT_PATCH = "26.17";
-const PREVIOUS_PATCH = "26.16";
+const CURRENT_PATCH = "16.17";
+const PREVIOUS_PATCH = "16.16";
 
 const status: DatasetStatus[] = [
   {
-    id: "26.17-euw",
+    id: "16.17-euw",
     patch: CURRENT_PATCH,
     region: "EUW",
     queue: "Ranked Solo / Challenger",
@@ -27,7 +27,7 @@ const status: DatasetStatus[] = [
     dataProvenance: "synthetic",
   },
   {
-    id: "26.17-eune",
+    id: "16.17-eune",
     patch: CURRENT_PATCH,
     region: "EUNE",
     queue: "Ranked Solo / Challenger",
@@ -41,7 +41,7 @@ const status: DatasetStatus[] = [
     dataProvenance: "synthetic",
   },
   {
-    id: "26.16-euw",
+    id: "16.16-euw",
     patch: PREVIOUS_PATCH,
     region: "EUW",
     queue: "Ranked Solo / Challenger",
@@ -53,7 +53,7 @@ const status: DatasetStatus[] = [
     dataProvenance: "synthetic",
   },
   {
-    id: "26.16-eune",
+    id: "16.16-eune",
     patch: PREVIOUS_PATCH,
     region: "EUNE",
     queue: "Ranked Solo / Challenger",

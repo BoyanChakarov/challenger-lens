@@ -37,7 +37,6 @@ interface PipelineMetrics {
 
 interface ErrorDetail {
   scope: string;
-  reference?: string;
   message: string;
 }
 
@@ -175,12 +174,11 @@ export async function runIngestion(
   const errors: ErrorDetail[] = [];
   const regionResults: RegionResult[] = [];
 
-  const recordError = (scope: string, error: unknown, reference?: string) => {
+  const recordError = (scope: string, error: unknown) => {
     metrics.failed += 1;
     const detail: ErrorDetail = { scope, message: sanitizedErrorMessage(error) };
-    if (reference) detail.reference = reference;
     if (errors.length < 100) errors.push(detail);
-    logger.warn(`Ingestion issue in ${scope}`, reference ? { reference } : undefined);
+    logger.warn(`Ingestion issue in ${scope}`);
   };
 
   const updateProgress = async () => {
@@ -233,6 +231,7 @@ export async function runIngestion(
         // layer; the dashboard applies its own minimum-sample filter and the
         // evidence model labels small samples as insufficient.
         await repository.refreshAnalytics(result.publicPatch, result.region, 1);
+        await repository.refreshCompanionAnalytics(result.publicPatch, result.region, 1);
       } catch (error) {
         recordError(`analytics:${result.region}`, error);
       }
@@ -305,7 +304,7 @@ async function ingestRegion(input: {
   riot: RiotClient;
   repository: IngestionRepository;
   metrics: PipelineMetrics;
-  recordError: (scope: string, error: unknown, reference?: string) => void;
+  recordError: (scope: string, error: unknown) => void;
   now: () => Date;
   isCancellationRequested: () => boolean;
 }): Promise<RegionResult> {
@@ -433,6 +432,7 @@ async function ingestRegion(input: {
   );
   const excluded = await repository.getExcludedMatchIds(
     candidateList.map((candidate) => candidate.matchId),
+    realmPatch,
   );
   const discoveredAt = now().toISOString();
   const completedSources = candidateList
@@ -499,7 +499,7 @@ async function ingestRegion(input: {
 
       if (finalTimelineStatus === "complete") metrics.succeeded += 1;
     } catch (error) {
-      recordError(`match:${region}`, error, candidate.matchId);
+      recordError(`match:${region}`, error);
     }
   });
 

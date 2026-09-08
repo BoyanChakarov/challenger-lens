@@ -85,6 +85,23 @@ describe("Riot client", () => {
     ).toBe(1_000);
   });
 
+  it("redacts player and match identifiers from log-safe endpoints", () => {
+    expect(
+      riotClientInternals.safeEndpoint(
+        new URL("https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/private-puuid/ids?count=20"),
+      ),
+    ).toBe(
+      "https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/[redacted-player-id]/ids",
+    );
+    expect(
+      riotClientInternals.safeEndpoint(
+        new URL("https://europe.api.riotgames.com/lol/match/v5/matches/EUW1_123/timeline"),
+      ),
+    ).toBe(
+      "https://europe.api.riotgames.com/lol/match/v5/matches/[redacted-match-id]/timeline",
+    );
+  });
+
   it("retries a 429 without putting the key in the URL", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

@@ -27,7 +27,15 @@ const workerEnvSchema = z.object({
     .string({ error: "RIOT_API_KEY is required" })
     .min(20, "RIOT_API_KEY is not valid")
     .refine((value) => value.startsWith("RGAPI-"), "RIOT_API_KEY must be a Riot API key"),
-  SUPABASE_URL: z.url({ error: "SUPABASE_URL must be a valid URL" }),
+  SUPABASE_URL: z
+    .url({ error: "SUPABASE_URL must be a valid URL" })
+    .refine((value) => {
+      const url = new URL(value);
+      return (
+        url.protocol === "https:" ||
+        (url.protocol === "http:" && ["localhost", "127.0.0.1"].includes(url.hostname))
+      );
+    }, "SUPABASE_URL must use HTTPS (plain HTTP is allowed only for a loopback development stack)"),
   SUPABASE_SECRET_KEY: z
     .string({ error: "SUPABASE_SECRET_KEY is required" })
     .min(20, "SUPABASE_SECRET_KEY is not valid")
@@ -64,7 +72,12 @@ export type WorkerConfig = Readonly<{
  * environment variable names, never their values.
  */
 export function loadWorkerConfig(environment: NodeJS.ProcessEnv = process.env): WorkerConfig {
-  const result = workerEnvSchema.safeParse(environment);
+  const result = workerEnvSchema.safeParse({
+    ...environment,
+    // The project URL is public configuration, so the worker may safely reuse
+    // the same value as the frontend. Server write credentials never fall back.
+    SUPABASE_URL: environment.SUPABASE_URL ?? environment.VITE_SUPABASE_URL,
+  });
 
   if (!result.success) {
     const details = result.error.issues

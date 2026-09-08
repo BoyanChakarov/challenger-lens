@@ -14,12 +14,36 @@ const looksConfigured = Boolean(
 
 export const isSupabaseConfigured = looksConfigured;
 
+const BACKEND_TIMEOUT_MS = 2_500;
+
+const timedFetch: typeof fetch = async (input, init = {}) => {
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), BACKEND_TIMEOUT_MS);
+  const abortFromCaller = () => controller.abort();
+  init.signal?.addEventListener("abort", abortFromCaller, { once: true });
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    globalThis.clearTimeout(timeout);
+    init.signal?.removeEventListener("abort", abortFromCaller);
+  }
+};
+
 export const supabase: SupabaseClient | null = looksConfigured
   ? createClient(supabaseUrl as string, supabasePublishableKey as string, {
+      db: {
+        // Champion-select reads have a strict latency budget. A stale local
+        // cache is preferable to the SDK's default 1s/2s/4s retry sequence.
+        retry: false,
+      },
       auth: {
         autoRefreshToken: false,
         detectSessionInUrl: false,
         persistSession: false,
+      },
+      global: {
+        fetch: timedFetch,
       },
     })
   : null;
